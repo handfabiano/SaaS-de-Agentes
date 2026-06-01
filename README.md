@@ -15,7 +15,10 @@ src/                             Motor do agente (TypeScript — roda em Node e 
   types/                         Tipos centrais (AgentConfig, RunContext, ToolDefinition)
   agent/loop.ts                  Loop central (RAG → modelo → tool-calling → usage)
   tools/registry.ts              Catálogo de ferramentas plugáveis
-  lib/rag.ts                     RAG via match_chunks (embedText é ponto de integração)
+  lib/rag.ts                     RAG via match_chunks (embedText = provedor configurável)
+  lib/embeddings.ts              Provedor de embeddings plugável (OpenAI/Voyage, por env)
+  lib/chunk.ts                   Divisão de texto em trechos (com overlap)
+  lib/ingest.ts                  Pipeline texto → chunks → embeddings → knowledge_chunks
   lib/usage.ts                   Cálculo de custo + gravação em usage_events
   webhook/                       Camada de webhook (agnóstica de canal)
     parse.ts                     Normaliza payload do Evolution
@@ -26,6 +29,7 @@ src/                             Motor do agente (TypeScript — roda em Node e 
 
 supabase/functions/
   whatsapp-webhook/              Edge Function (Deno) que pluga o webhook no motor
+  indexar-documento/            Edge Function (Deno) de ingestão p/ a base (RAG)
 
 painel/                          Painel admin (React + Vite + Supabase) — ver painel/README.md
 ```
@@ -37,18 +41,20 @@ npm install
 npm run typecheck
 npx tsx src/agent/loop.smoke.ts        # loop do agente
 npx tsx src/webhook/handler.smoke.ts   # fluxo do webhook
+npx tsx src/lib/ingest.smoke.ts        # chunking + pipeline de ingestão
 ```
 
 ## Caminho de produção (resumo)
 
 1. Aplicar `schema_agente_saas_v2.sql` no Supabase + `sql/seed_primeiro_tenant.sql`.
-2. Implementar `embedText` real em `src/lib/rag.ts` (destrava o RAG).
+2. Configurar embeddings (env `EMBEDDINGS_*` + `OPENAI_API_KEY`/`VOYAGE_API_KEY`) e
+   deploy do `indexar-documento` — destrava o RAG.
 3. Deploy do `whatsapp-webhook` + apontar a instância Evolution (ver a README da função).
 4. Painel admin (`painel/`) — já pronto.
 
 ## Pendências de integração (TODO no código)
 
-- `embedText` em `src/lib/rag.ts`: ligar provedor de embeddings real (dim. deve bater com `vector(N)` no schema).
 - Preços em `src/lib/usage.ts`: confirmar valores oficiais antes de cobrar.
 - Segredos da Evolution: migrar de `tool_configs.config` para o **Supabase Vault**.
+- Extração de **PDF** na ingestão (`indexar-documento` cobre .txt/.md/texto colado).
 - Billing (Stripe) e Instagram: ainda não implementados neste repo.

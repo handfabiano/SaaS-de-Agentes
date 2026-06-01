@@ -1,18 +1,24 @@
 // src/lib/rag.ts
 // Recupera trechos relevantes da base de conhecimento do agente (RAG).
-// O embedding aqui é um ponto de integração: troque `embedText` pelo seu provedor
-// de embeddings (Voyage, OpenAI, etc.). O importante é a dimensão bater com o schema.
+// O embedding usa o provedor configurado em src/lib/embeddings.ts (OpenAI/Voyage,
+// via env). A dimensão DEVE bater com vector(N) no schema.
 
 import type { RunContext } from "../types/index.ts";
+import { embedOne, getEmbeddingsConfig } from "./embeddings.ts";
 
 /**
- * Gera o embedding da consulta. STUB: substitua pela chamada real ao seu
- * provedor de embeddings. A dimensão DEVE bater com vector(N) no schema (1536).
+ * Gera o embedding da pergunta para busca. Retorna null se não houver provedor
+ * configurado (RAG fica desligado, mas o agente segue respondendo).
  */
-export async function embedText(_texto: string): Promise<number[]> {
-  // TODO: integrar provedor de embeddings real.
-  // Retornamos um vetor de zeros só para o código ser tipável/testável.
-  return new Array(1536).fill(0);
+export async function embedText(texto: string): Promise<number[] | null> {
+  const cfg = getEmbeddingsConfig();
+  if (!cfg) return null;
+  try {
+    return await embedOne(texto, cfg, "query");
+  } catch (e) {
+    console.error("[rag] embedText falhou:", e instanceof Error ? e.message : e);
+    return null;
+  }
 }
 
 export interface Chunk {
@@ -31,6 +37,7 @@ export async function buscarContexto(
   matchCount = 5
 ): Promise<Chunk[]> {
   const embedding = await embedText(pergunta);
+  if (!embedding) return []; // sem provedor de embeddings → sem RAG (best-effort)
   const { data, error } = await ctx.db.rpc("match_chunks", {
     p_tenant_id: ctx.tenantId,
     p_agent_id: ctx.agentId,
