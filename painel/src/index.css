@@ -1,0 +1,149 @@
+/* =====================================================================
+   Design system — reaproveitado do ConectaPol
+   Paleta: Moss / Ember / Clay / Paper · Tipografia: Fraunces + Cabinet Grotesk
+   ===================================================================== */
+
+:root {
+  /* Paper — fundos quentes off-white */
+  --paper: #f6f2ea;
+  --paper-raised: #fdfbf6;
+  --paper-sunken: #efe9dd;
+
+  /* Clay — terrosos neutros (bordas, texto secundário, superfícies) */
+  --clay-100: #e7ddcd;
+  --clay-200: #d8cab4;
+  --clay-300: #c4b196;
+  --clay-400: #a9926f;
+  --clay-500: #8a7355;
+  --clay-600: #6c5942;
+  --clay-700: #4f4131;
+
+  /* Moss — verde primário (ações, navegação ativa, marca) */
+  --moss-50: #eef2ea;
+  --moss-100: #d6e0cd;
+  --moss-300: #91a87f;
+  --moss-500: #5a7150;
+  --moss-600: #47593f;
+  --moss-700: #36462f;
+
+  /* Ember — laranja queimado (acento, alertas, escaladas) */
+  --ember-100: #f6dccb;
+  --ember-300: #e09a6c;
+  --ember-500: #c2562e;
+  --ember-600: #a4451f;
+  --ember-700: #7f3316;
+
+  /* Estados semânticos */
+  --ink: #2a2622;
+  --ink-soft: #5b5246;
+  --ink-faint: #8c8270;
+
+  --ok-500: #3f7d52;
+  --ok-100: #d7e8da;
+  --warn-500: var(--ember-500);
+  --danger-500: #b23a2e;
+  --danger-100: #f2d6d1;
+
+  /* Tipografia */
+  --font-display: "Fraunces", "Georgia", serif;
+  --font-ui: "Cabinet Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Forma / sombra */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --shadow-sm: 0 1px 2px rgba(42, 38, 34, 0.06);
+  --shadow: 0 4px 16px rgba(42, 38, 34, 0.08);
+  --shadow-lg: 0 12px 40px rgba(42, 38, 34, 0.16);
+
+  --sidebar-w: 248px;
+  --topbar-h: 64px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--moss-600);
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--moss-500);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--moss-100);
+}
+
+/* Scrollbar suave */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--clay-200) transparent;
+}
+
+/* Animações utilitárias */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
