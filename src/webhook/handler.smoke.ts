@@ -14,7 +14,7 @@ const mensagens: { papel: string; conteudo: string; externalId?: string }[] = []
 const escaladas: string[] = [];
 const processadas = new Set<string>();
 
-function makeDeps(opts: { escalar?: boolean } = {}): WebhookDeps {
+function makeDeps(opts: { escalar?: boolean; recentes?: number } = {}): WebhookDeps {
   return {
     async resolverAgentePorInstancia(_canal, instancia) {
       if (instancia !== "inst-1") return null;
@@ -53,6 +53,9 @@ function makeDeps(opts: { escalar?: boolean } = {}): WebhookDeps {
     },
     async marcarEscalada(_t, conversationId) {
       escaladas.push(conversationId);
+    },
+    async contarMensagensUsuarioRecentes() {
+      return opts.recentes ?? 0;
     },
     montarContexto(tenantId, agentId, conversationId, toolConfigs): RunContext {
       return {
@@ -129,6 +132,13 @@ async function main() {
   const depsEsc = makeDeps({ escalar: true });
   r = await processarMensagem(depsEsc, msg({ externalId: "ext-4" }));
   check(r.status === "ok" && escaladas.includes("conv1"), "marca escalada");
+
+  // 6) rate limit (muitas mensagens recentes → barra antes do modelo)
+  const enviadasAntes = enviadas.length;
+  const depsRate = makeDeps({ recentes: 999 });
+  r = await processarMensagem(depsRate, msg({ externalId: "ext-5" }));
+  check(r.status === "rate_limited", "barra flood por rate limit");
+  check(enviadas.length === enviadasAntes, "não responde quando rate-limited");
 
   console.log(falhou ? "\n❌ HANDLER SMOKE FALHOU" : "\n✅ HANDLER SMOKE PASSOU");
   if (falhou) process.exit(1);

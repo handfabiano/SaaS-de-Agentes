@@ -21,13 +21,25 @@ Evolution → POST /whatsapp-webhook → parseEvolution → processarMensagem(de
 ANTHROPIC_API_KEY
 SUPABASE_URL
 SUPABASE_SERVICE_ROLE_KEY
+WHATSAPP_WEBHOOK_SECRET   # (FASE 8) segredo compartilhado p/ proteger o endpoint
 ```
 
 ## 2. Deploy
 
+O Evolution não envia JWT do Supabase, então deploy **sem verificação de JWT** — a
+proteção é feita pelo nosso segredo compartilhado:
+
 ```bash
-supabase functions deploy whatsapp-webhook
+supabase functions deploy whatsapp-webhook --no-verify-jwt
 ```
+
+### Proteções embutidas (FASE 8)
+
+- **Segredo compartilhado:** se `WHATSAPP_WEBHOOK_SECRET` estiver definido, a função
+  exige `?secret=<valor>` na URL **ou** o header `x-webhook-secret`. Sem ele → `401`.
+  (Se não definir o secret, a função fica aberta e loga um aviso.)
+- **Rate limit por contato:** no máximo **20 mensagens / 60 s** por conversa; acima
+  disso a mensagem é descartada (`status: rate_limited`) **sem chamar o modelo**.
 
 > A função importa o motor de `../../../src` (fora de `supabase/functions/`). O
 > bundler do Supabase segue esses imports. Se a sua versão do CLI reclamar, rode
@@ -58,8 +70,8 @@ values (
 
 ## 4. Configurar o webhook no Evolution
 
-- Aponte a instância para a URL da função:
-  `https://<PROJECT_REF>.functions.supabase.co/whatsapp-webhook`
+- Aponte a instância para a URL da função (com o segredo na query):
+  `https://<PROJECT_REF>.functions.supabase.co/whatsapp-webhook?secret=<WHATSAPP_WEBHOOK_SECRET>`
 - Evento: **MESSAGES_UPSERT**.
 - (Opcional) desligar `fromMe`/SEND_MESSAGE — o código já filtra `fromMe`, mas reduz ruído.
 
@@ -68,7 +80,7 @@ values (
 **Sem WhatsApp ainda** — `curl` com um payload montado à mão:
 
 ```bash
-curl -i -X POST "https://<PROJECT_REF>.functions.supabase.co/whatsapp-webhook" \
+curl -i -X POST "https://<PROJECT_REF>.functions.supabase.co/whatsapp-webhook?secret=<WHATSAPP_WEBHOOK_SECRET>" \
   -H "content-type: application/json" \
   -d '{
     "event": "messages.upsert",

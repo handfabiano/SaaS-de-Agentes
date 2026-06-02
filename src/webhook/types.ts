@@ -91,6 +91,16 @@ export interface WebhookDeps {
 
   /** Executa o agente (motor amarrado ao client Anthropic). */
   executarAgente: ExecutarAgente;
+
+  /**
+   * Rate limit (FASE 8): nº de mensagens do usuário nesta conversa desde `desdeISO`.
+   * O handler usa para barrar flood de um mesmo contato antes de chamar o modelo.
+   */
+  contarMensagensUsuarioRecentes: (
+    tenantId: string,
+    conversationId: string,
+    desdeISO: string
+  ) => Promise<number>;
 }
 
 /** Resultado do processamento — útil para logs/observabilidade (FASE 8). */
@@ -100,6 +110,7 @@ export type StatusProcessamento =
   | "sem_texto"
   | "instancia_sem_agente"
   | "duplicada"
+  | "rate_limited"
   | "erro";
 
 export interface ResultadoWebhook {

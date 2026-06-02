@@ -19,6 +19,9 @@ import { processarMensagem } from "../../../src/webhook/handler.ts";
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+// Segredo compartilhado (FASE 8): só quem souber o segredo pode chamar o webhook.
+// Defina WHATSAPP_WEBHOOK_SECRET e inclua na URL (?secret=) ou no header.
+const WEBHOOK_SECRET = Deno.env.get("WHATSAPP_WEBHOOK_SECRET") ?? "";
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
   auth: { persistSession: false },
@@ -33,9 +36,24 @@ function json(data: unknown, status = 200): Response {
   });
 }
 
+/** Valida o segredo compartilhado (header x-webhook-secret ou ?secret=). */
+function segredoValido(req: Request): boolean {
+  if (!WEBHOOK_SECRET) {
+    console.warn("[whatsapp-webhook] WHATSAPP_WEBHOOK_SECRET não definido — aberto.");
+    return true; // não quebra setups existentes; recomendado definir em produção
+  }
+  const header = req.headers.get("x-webhook-secret") ?? "";
+  const query = new URL(req.url).searchParams.get("secret") ?? "";
+  return header === WEBHOOK_SECRET || query === WEBHOOK_SECRET;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return json({ status: "erro", detalhe: "use POST" }, 405);
+  }
+
+  if (!segredoValido(req)) {
+    return json({ status: "erro", detalhe: "não autorizado" }, 401);
   }
 
   let body: unknown;

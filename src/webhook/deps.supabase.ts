@@ -192,6 +192,17 @@ export function criarWebhookDeps({ supabase, anthropic }: Opcoes): WebhookDeps {
         .eq("id", conversationId);
     },
 
+    async contarMensagensUsuarioRecentes(tenantId, conversationId, desdeISO) {
+      const { count } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", tenantId)
+        .eq("conversation_id", conversationId)
+        .eq("papel", "user")
+        .gte("created_at", desdeISO);
+      return count ?? 0;
+    },
+
     montarContexto(tenantId, agentId, conversationId, toolConfigs): RunContext {
       return {
         tenantId,

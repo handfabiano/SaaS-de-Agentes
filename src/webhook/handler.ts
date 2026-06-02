@@ -7,6 +7,10 @@ import type { MensagemRecebida, ResultadoWebhook, WebhookDeps } from "./types.ts
 
 const HISTORICO_LIMITE = 12; // últimas N mensagens carregadas como contexto
 
+// Rate limit por contato (FASE 8): no máximo N mensagens por janela de tempo.
+const RATE_MAX_MENSAGENS = 20;
+const RATE_JANELA_SEGUNDOS = 60;
+
 export async function processarMensagem(
   deps: WebhookDeps,
   msg: MensagemRecebida
@@ -42,6 +46,21 @@ export async function processarMensagem(
       msg.canal,
       msg.contatoExterno
     );
+
+    // 5b) Rate limit por contato: barra flood ANTES de chamar o modelo (custo).
+    const desde = new Date(Date.now() - RATE_JANELA_SEGUNDOS * 1000).toISOString();
+    const recentes = await deps.contarMensagensUsuarioRecentes(
+      tenantId,
+      conversationId,
+      desde
+    );
+    if (recentes >= RATE_MAX_MENSAGENS) {
+      return {
+        status: "rate_limited",
+        detalhe: `${recentes} msgs em ${RATE_JANELA_SEGUNDOS}s (limite ${RATE_MAX_MENSAGENS})`,
+      };
+    }
+
     const historico = await deps.carregarHistorico(
       tenantId,
       conversationId,
